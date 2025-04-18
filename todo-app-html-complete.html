@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#ffffff"/>
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-title" content="ToDoApp">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="icons/imgagetodo.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="font2/css/all.min.css">
+    <script src="https://unpkg.com/vue@3.2.47/dist/vue.global.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
+    <title>La TuaLista - App Todo</title>
+</head>
+<body>
+    <div id="app">
+        <div class="containerApp">
+            <div class="app-header">
+                <div class="logo">
+                    <img src="icons/icon-192x192.png" alt="logo">
+                </div>
+                <h1 class="app-title">La TuaLista</h1>
+            </div>
+
+            <!-- Sezione di Input -->
+            <div class="input-section">
+                <div class="form-row">
+                    <div class="input-group">
+                        <input 
+                            placeholder="Inserisci task" 
+                            v-model="newTodo" 
+                            type="text" 
+                            class="form-control" 
+                            @keyup.enter="aggiungi">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="input-group">
+                        <select v-model="newPriority" class="form-select">
+                            <option value="alta">Priorità Alta</option>
+                            <option value="media">Priorità Media</option>
+                            <option value="bassa">Priorità Bassa</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="input-group">
+                        <select v-model="newCategory" class="form-select">
+                            <option value="">Seleziona Categoria</option>
+                            <option v-for="cat in categories" :value="cat">{{ cat }}</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="input-group">
+                        <span class="input-group-text">Scadenza</span>
+                        <input 
+                            type="date" 
+                            v-model="newDueDate" 
+                            class="form-control">
+                    </div>
+                </div>
+
+                <div class="form-row">
+                    <div class="input-group">
+                        <input 
+                            placeholder="Nuova categoria" 
+                            v-model="customCategory" 
+                            type="text" 
+                            class="form-control"
+                            @keyup.enter="addCategory">
+                        <button 
+                            @click="addCategory" 
+                            class="btn btn-outline-secondary">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="action-buttons">
+                    <button @click="aggiungi" class="btn btn-success">
+                        <i class="fa-solid fa-plus"></i> Aggiungi
+                    </button>
+                    <button @click="elimina" class="btn btn-danger">
+                        <i class="fa-solid fa-trash"></i> Cancella Tutto
+                    </button>
+                </div>
+            </div>
+
+            <!-- Sezione di Filtri -->
+            <div class="filter-section">
+                <div class="title filter-title">
+                    <h3><i class="fa-solid fa-filter"></i> Filtra Task</h3>
+                </div>
+                
+                <div class="filters-container">
+                    <div class="form-row">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="fa-solid fa-search"></i>
+                            </span>
+                            <input 
+                                placeholder="Cerca task..." 
+                                v-model="searchTerm" 
+                                type="text" 
+                                class="form-control">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="input-group">
+                            <select v-model="filterCategory" class="form-select">
+                                <option value="">Tutte le categorie</option>
+                                <option v-for="cat in categories" :value="cat">{{ cat }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="input-group">
+                            <select v-model="filterPriority" class="form-select">
+                                <option value="">Tutte le priorità</option>
+                                <option value="alta">Alta priorità</option>
+                                <option value="media">Media priorità</option>
+                                <option value="bassa">Bassa priorità</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row visibility-toggles">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="showCompletedSwitch" v-model="showCompletedTasks">
+                            <label class="form-check-label" for="showCompletedSwitch">Mostra completati</label>
+                        </div>
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="showPostponedSwitch" v-model="showPostponedTasks">
+                            <label class="form-check-label" for="showPostponedSwitch">Mostra rimandati</label>
+                        </div>
+                    </div>
+
+                    <button @click="resetFilters" class="btn btn-secondary btn-sm">
+                        <i class="fa-solid fa-broom"></i> Reset Filtri
+                    </button>
+                </div>
+            </div>
+
+            <!-- Box Task Attuali -->
+            <div class="boxTask">
+                <div class="title">
+                    <h3><i class="fa-solid fa-list-check"></i> Task Attivi</h3>
+                </div>
+                <div v-if="filteredTasks.length === 0" class="empty-list">
+                    <p>Nessun task attivo trovato</p>
+                </div>
+                <ul v-else>
+                    <li v-for="(task, index) in filteredTasks" :key="task.id" :class="[
+                        'task-item', 
+                        getPriorityClass(task.priority),
+                        {'overdue': isOverdue(task)},
+                        {'due-today': isDueToday(task)}
+                    ]">
+                        <div class="task-content">
+                            <div class="task-header">
+                                <span class="category-badge" :style="{backgroundColor: getCategoryColor(task.category)}">
+                                    <i :class="['fa-solid', getCategoryIcon(task.category)]"></i>
+                                    {{ task.category }}
+                                </span>
+                            </div>
+
+                            <div class="task-body">
+                                <p class="task-text">{{ task.text }}</p>
+                                
+                                <div class="task-meta">
+                                    <span v-if="task.dueDate" class="task-date">
+                                        <i class="fa-solid fa-calendar-days"></i>
+                                        {{ formatDate(task.dueDate) }}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="task-actions">
+                                <button class="action-btn edit" @click="startEdit(task)">
+                                    <i class="fa-solid fa-pencil"></i>
+                                </button>
+                                <button class="action-btn complete" @click="taskFatte(index)">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                </button>
+                                <button class="action-btn postpone" @click="taskRimandate(index)">
+                                    <i class="fa-solid fa-clock"></i>
+                                </button>
+                                <button class="action-btn delete" @click="taskNonFatte(index)">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                                <a v-if="mostraMappe(task)" :href="generaLinkMappe(task)" target="_blank" class="action-btn map">
+                                    <i class="fa-solid fa-location-dot"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Box Task Completati -->
+            <div class="boxTask" v-if="showCompletedTasks">
+                <div class="title completed-title">
+                    <h3><i class="fa-solid fa-check-double"></i> Task Completati</h3>
+                </div>
+                <div v-if="filteredCompletedTasks.length === 0" class="empty-list">
+                    <p>Nessun task completato trovato</p>
+                </div>
+                <ul v-else>
+                    <li v-for="task in filteredCompletedTasks" :key="task.id" class="task-item completed-task">
+                        <div class="task-content">
+                            <div class="task-header">
+                                <span class="category-badge" :style="{backgroundColor: getCategoryColor(task.category)}">
+                                    <i :class="['fa-solid', getCategoryIcon(task.category)]"></i>
+                                    {{ task.category }}
+                                </span>
+                            </div>
+
+                            <div class="task-body">
+                                <p class="task-text">{{ task.text }}</p>
+                                
+                                <div class="task-meta">
+                                    <span v-if="task.completedAt" class="task-date">
+                                        <i class="fa-solid fa-check"></i>
+                                        Completato il {{ formatDate(task.completedAt) }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Box Task Rimandati -->
+            <div class="boxTask" v-if="showPostponedTasks">
+                <div class="title postponed-title">
+                    <h3><i class="fa-solid fa-clock"></i> Task Rimandati</h3>
+                </div>
+                <div v-if="filteredPostponedTasks.length === 0" class="empty-list">
+                    <p>Nessun task rimandato trovato</p>
+                </div>
+                <ul v-else>
+                    <li v-for="(task, index) in filteredPostponedTasks" :key="task.id" class="task-item postponed-task">
+                        <div class="task-content">
+                            <div class="task-header">
+                                <span class="category-badge" :style="{backgroundColor: getCategoryColor(task.category)}">
+                                    <i :class="['fa-solid', getCategoryIcon(task.category)]"></i>
+                                    {{ task.category }}
+                                </span>
+                            </div>
+
+                            <div class="task-body">
+                                <p class="task-text">{{ task.text }}</p>
+                                
+                                <div class="task-meta">
+                                    <span v-if="task.postponedUntil" class="task-date">
+                                        <i class="fa-solid fa-calendar-days"></i>
+                                        Riprendere il {{ formatDate(task.postponedUntil) }}
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="task-actions">
+                                <button class="action-btn edit" @click="startEdit(task)">
+                                    <i class="fa-solid fa-pencil"></i>
+                                </button>
+                                <button class="action-btn complete" @click="eliminaRimandate(index)">
+                                    <i class="fa-solid fa-circle-check"></i>
+                                </button>
+                                <button class="action-btn delete" @click="taskNonFatte(index, 'rimandate')">
+                                    <i class="fa-solid fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Modal per modificare task -->
+            <div v-if="editingTask" class="edit-modal">
+                <div class="edit-modal-content">
+                    <div class="modal-header">
+                        <h4>Modifica Task</h4>
+                        <button class="close-btn" @click="cancelEdit">&times;</button>
+                    </div>
+                    
+                    <div class="modal-body">
+                        <div class="form-row">
+                            <label>Testo</label>
+                            <input type="text" v-model="editingTask.text" class="form-control">
+                        </div>
+                        
+                        <div class="form-row">
+                            <label>Priorità</label>
+                            <select v-model="editingTask.priority" class="form-select">
+                                <option value="alta">Alta</option>
+                                <option value="media">Media</option>
+                                <option value="bassa">Bassa</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-row">
+                            <label>Categoria</label>
+                            <select v-model="editingTask.category" class="form-select">
+                                <option v-for="cat in categories" :value="cat">{{ cat }}</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-row">
+                            <label>Scadenza</label>
+                            <input type="date" v-model="editingTask.dueDate" class="form-control">
+                        </div>
+                        
+                        <div class="form-row" v-if="editingTask.postponedUntil">
+                            <label>Rimandato fino al</label>
+                            <input type="date" v-model="editingTask.postponedUntil" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" @click="cancelEdit">Annulla</button>
+                        <button class="btn btn-primary" @click="saveEdit">Salva</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="main.js"></script>
+</body>
+</html>
